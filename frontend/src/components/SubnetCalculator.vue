@@ -1,116 +1,130 @@
 <template>
-  <div>
-    <!-- Mode toggle -->
-    <div class="flex gap-4 mb-6 text-xs font-mono">
-      <button
-        @click="mode = 'split'"
-        :class="mode === 'split' ? 'text-neutral-100' : 'text-neutral-700 hover:text-neutral-400'"
-        class="transition-colors"
-      >split cidr</button>
-      <button
-        @click="mode = 'range'"
-        :class="mode === 'range' ? 'text-neutral-100' : 'text-neutral-700 hover:text-neutral-400'"
-        class="transition-colors"
-      >range to cidr</button>
-    </div>
+  <div class="space-y-6">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <h2 class="text-lg font-semibold text-white mb-4">Subnet Calculator</h2>
 
-    <!-- Split CIDR -->
-    <div v-if="mode === 'split'">
-      <div class="flex flex-col sm:flex-row gap-4 items-end">
+      <!-- Mode toggle -->
+      <div class="flex gap-2 mb-4">
+        <button
+          @click="mode = 'split'"
+          :class="[
+            'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+            mode === 'split' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+          ]"
+        >Split CIDR</button>
+        <button
+          @click="mode = 'range'"
+          :class="[
+            'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
+            mode === 'range' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+          ]"
+        >Range to CIDR</button>
+      </div>
+
+      <!-- Split CIDR -->
+      <div v-if="mode === 'split'" class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">cidr</label>
+          <label class="block text-sm text-gray-400 mb-1">CIDR Block</label>
           <input
             v-model="cidr"
             type="text"
-            placeholder="10.0.0.0/16"
-            class="w-full"
+            placeholder="e.g. 10.0.0.0/16"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="calculate"
           />
         </div>
-        <div class="w-full sm:w-32">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">target</label>
-          <select v-model="targetPrefix" class="w-full">
+        <div class="w-full sm:w-40">
+          <label class="block text-sm text-gray-400 mb-1">Target Prefix</label>
+          <select
+            v-model="targetPrefix"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+          >
             <option v-for="n in prefixOptions" :key="n" :value="n">/{{ n }}</option>
           </select>
         </div>
-        <button
-          @click="calculate"
-          :disabled="loading"
-          class="text-sm font-mono text-neutral-400 hover:text-neutral-100 disabled:text-neutral-700 transition-colors pb-2"
-        >
-          {{ loading ? '...' : 'go' }}
-        </button>
+        <div class="flex items-end">
+          <button
+            @click="calculate"
+            :disabled="loading"
+            class="w-full sm:w-auto px-6 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium rounded-lg transition-colors"
+          >
+            {{ loading ? 'Working...' : 'Calculate' }}
+          </button>
+        </div>
       </div>
-    </div>
 
-    <!-- Range to CIDR -->
-    <div v-if="mode === 'range'">
-      <div class="flex flex-col sm:flex-row gap-4 items-end">
+      <!-- Range to CIDR -->
+      <div v-if="mode === 'range'" class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">start ip</label>
+          <label class="block text-sm text-gray-400 mb-1">Start IP</label>
           <input
             v-model="rangeStart"
             type="text"
-            placeholder="192.168.0.0"
-            class="w-full"
+            placeholder="e.g. 192.168.0.0"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="convertRange"
           />
         </div>
         <div class="flex-1">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">end ip</label>
+          <label class="block text-sm text-gray-400 mb-1">End IP</label>
           <input
             v-model="rangeEnd"
             type="text"
-            placeholder="192.168.3.255"
-            class="w-full"
+            placeholder="e.g. 192.168.3.255"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="convertRange"
           />
         </div>
-        <button
-          @click="convertRange"
-          :disabled="loading"
-          class="text-sm font-mono text-neutral-400 hover:text-neutral-100 disabled:text-neutral-700 transition-colors pb-2"
-        >
-          {{ loading ? '...' : 'go' }}
-        </button>
+        <div class="flex items-end">
+          <button
+            @click="convertRange"
+            :disabled="loading"
+            class="w-full sm:w-auto px-6 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium rounded-lg transition-colors"
+          >
+            {{ loading ? 'Working...' : 'Convert' }}
+          </button>
+        </div>
       </div>
+
+      <p v-if="error" class="mt-3 text-red-400 text-sm">{{ error }}</p>
     </div>
 
-    <p v-if="error" class="mt-4 text-red-400/80 text-sm font-mono">{{ error }}</p>
-
-    <div v-if="results.length" class="mt-8">
-      <div class="flex items-center justify-between mb-3">
-        <span class="text-xs text-neutral-600 font-mono">{{ results.length }} {{ results.length === 1 ? 'block' : 'blocks' }}</span>
+    <!-- Results -->
+    <div v-if="results.length" class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-medium text-gray-400">
+          {{ results.length }} {{ results.length === 1 ? 'block' : 'subnets' }} found
+        </h3>
         <button
           @click="copyAll"
-          class="text-xs text-neutral-600 hover:text-neutral-300 font-mono transition-colors"
+          class="text-sm text-gray-400 hover:text-gray-200 transition-colors"
         >
-          {{ copied ? 'copied' : 'copy' }}
+          {{ copied ? 'Copied!' : 'Copy All' }}
         </button>
       </div>
 
-      <div class="overflow-auto max-h-[65vh]">
-        <table class="w-full text-sm font-mono">
-          <thead>
-            <tr class="text-left text-neutral-600 text-xs">
-              <th class="pr-4 py-1.5 font-normal">#</th>
-              <th class="pr-4 py-1.5 font-normal">cidr</th>
-              <th class="pr-4 py-1.5 font-normal">first</th>
-              <th class="pr-4 py-1.5 font-normal">last</th>
-              <th class="py-1.5 font-normal text-right">hosts</th>
+      <div class="overflow-auto max-h-[60vh] rounded-lg">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-gray-800">
+            <tr class="text-left text-gray-400">
+              <th class="px-4 py-2 font-medium">#</th>
+              <th class="px-4 py-2 font-medium">CIDR</th>
+              <th class="px-4 py-2 font-medium">First IP</th>
+              <th class="px-4 py-2 font-medium">Last IP</th>
+              <th class="px-4 py-2 font-medium text-right">Hosts</th>
             </tr>
           </thead>
-          <tbody class="text-neutral-400">
+          <tbody>
             <tr
               v-for="(subnet, i) in results"
               :key="i"
-              class="border-t border-neutral-900 hover:text-neutral-200 transition-colors"
+              class="border-t border-gray-800 hover:bg-gray-800/50 transition-colors"
             >
-              <td class="pr-4 py-1.5 text-neutral-700">{{ i + 1 }}</td>
-              <td class="pr-4 py-1.5 text-neutral-200">{{ subnet.cidr }}</td>
-              <td class="pr-4 py-1.5">{{ subnet.first_ip }}</td>
-              <td class="pr-4 py-1.5">{{ subnet.last_ip }}</td>
-              <td class="py-1.5 text-right text-neutral-600">{{ subnet.hosts.toLocaleString() }}</td>
+              <td class="px-4 py-2 text-gray-500 font-mono">{{ i + 1 }}</td>
+              <td class="px-4 py-2 text-white font-mono">{{ subnet.cidr }}</td>
+              <td class="px-4 py-2 text-gray-300 font-mono">{{ subnet.first_ip }}</td>
+              <td class="px-4 py-2 text-gray-300 font-mono">{{ subnet.last_ip }}</td>
+              <td class="px-4 py-2 text-gray-300 font-mono text-right">{{ subnet.hosts.toLocaleString() }}</td>
             </tr>
           </tbody>
         </table>
@@ -142,14 +156,12 @@ const prefixOptions = computed(() => {
 
 async function calculate() {
   if (!cidr.value.trim()) {
-    error.value = 'enter a cidr block'
+    error.value = 'Please enter a CIDR block'
     return
   }
-
   loading.value = true
   error.value = ''
   results.value = []
-
   try {
     const res = await fetch('/api/subnet.php', {
       method: 'POST',
@@ -157,28 +169,19 @@ async function calculate() {
       body: JSON.stringify({ cidr: cidr.value.trim(), prefix: targetPrefix.value })
     })
     const data = await res.json()
-    if (data.error) {
-      error.value = data.error
-    } else {
-      results.value = data.subnets
-    }
-  } catch (e) {
-    error.value = 'failed to connect'
-  } finally {
-    loading.value = false
-  }
+    if (data.error) { error.value = data.error } else { results.value = data.subnets }
+  } catch (e) { error.value = 'Failed to connect to API' }
+  finally { loading.value = false }
 }
 
 async function convertRange() {
   if (!rangeStart.value.trim() || !rangeEnd.value.trim()) {
-    error.value = 'enter start and end IPs'
+    error.value = 'Please enter start and end IPs'
     return
   }
-
   loading.value = true
   error.value = ''
   results.value = []
-
   try {
     const res = await fetch('/api/range2cidr.php', {
       method: 'POST',
@@ -186,16 +189,9 @@ async function convertRange() {
       body: JSON.stringify({ start: rangeStart.value.trim(), end: rangeEnd.value.trim() })
     })
     const data = await res.json()
-    if (data.error) {
-      error.value = data.error
-    } else {
-      results.value = data.cidrs
-    }
-  } catch (e) {
-    error.value = 'failed to connect'
-  } finally {
-    loading.value = false
-  }
+    if (data.error) { error.value = data.error } else { results.value = data.cidrs }
+  } catch (e) { error.value = 'Failed to connect to API' }
+  finally { loading.value = false }
 }
 
 function copyAll() {

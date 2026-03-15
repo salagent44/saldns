@@ -1,107 +1,129 @@
 <template>
-  <div>
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-col sm:flex-row gap-4 items-end">
-        <div class="flex-1 relative">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">domain</label>
-          <input
-            v-model="domain"
-            type="text"
-            placeholder="example.com"
-            class="w-full"
-            @keyup.enter="dig"
-            @focus="showHistory = true"
-            @blur="hideHistory"
-          />
-          <div v-if="showHistory && history.length" class="absolute z-10 top-full left-0 right-0 mt-1 bg-neutral-900 border border-neutral-800 max-h-40 overflow-auto">
+  <div class="space-y-6">
+    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+      <h2 class="text-lg font-semibold text-white mb-4">Dig Lookup</h2>
+      <p class="text-gray-400 text-sm mb-4">
+        Query DNS records for any domain. Select one or more record types.
+      </p>
+
+      <div class="flex flex-col gap-4">
+        <div class="flex flex-col sm:flex-row gap-4">
+          <div class="flex-1 relative">
+            <label class="block text-sm text-gray-400 mb-1">Domain</label>
+            <input
+              v-model="domain"
+              type="text"
+              placeholder="e.g. example.com"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
+              @keyup.enter="dig"
+              @focus="showHistory = true"
+              @blur="hideHistory"
+            />
+            <div v-if="showHistory && history.length" class="absolute z-10 top-full left-0 right-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg overflow-hidden max-h-48 overflow-y-auto">
+              <button
+                v-for="item in history"
+                :key="item"
+                @mousedown.prevent="domain = item; showHistory = false; dig()"
+                class="block w-full text-left px-4 py-2 text-sm font-mono text-gray-300 hover:bg-gray-700 transition-colors"
+              >
+                {{ item }}
+              </button>
+            </div>
+          </div>
+          <div class="w-full sm:w-48">
+            <label class="block text-sm text-gray-400 mb-1">DNS Server (optional)</label>
+            <input
+              v-model="server"
+              type="text"
+              placeholder="e.g. 8.8.8.8"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
+            />
+          </div>
+          <div class="flex items-end">
             <button
-              v-for="item in history"
-              :key="item"
-              @mousedown.prevent="domain = item; showHistory = false; dig()"
-              class="block w-full text-left px-3 py-1.5 text-sm font-mono text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
+              @click="dig"
+              :disabled="loading"
+              class="w-full sm:w-auto px-6 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium rounded-lg transition-colors"
             >
-              {{ item }}
+              {{ loading ? 'Querying...' : 'Dig' }}
             </button>
           </div>
         </div>
-        <div class="w-full sm:w-40">
-          <label class="block text-xs text-neutral-600 mb-1 font-mono">server</label>
-          <input
-            v-model="server"
-            type="text"
-            placeholder="8.8.8.8"
-            class="w-full"
-          />
+
+        <!-- Record Type Selector -->
+        <div>
+          <div class="flex items-center gap-3 mb-2">
+            <label class="text-sm text-gray-400">Record Types</label>
+            <button
+              @click="selectAll"
+              class="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              {{ allSelected ? 'Deselect All' : 'Select All' }}
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="rt in recordTypes"
+              :key="rt"
+              @click="toggleType(rt)"
+              :class="[
+                'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+                selectedTypes.includes(rt)
+                  ? 'bg-gray-700 text-white'
+                  : 'bg-gray-800 text-gray-500 hover:text-gray-300 hover:bg-gray-700/50'
+              ]"
+            >
+              {{ rt }}
+            </button>
+          </div>
         </div>
-        <button
-          @click="dig"
-          :disabled="loading"
-          class="text-sm font-mono text-neutral-400 hover:text-neutral-100 disabled:text-neutral-700 transition-colors pb-2"
-        >
-          {{ loading ? '...' : 'go' }}
-        </button>
       </div>
 
-      <div class="flex items-center gap-3">
-        <div class="flex flex-wrap gap-1.5">
-          <button
-            v-for="rt in recordTypes"
-            :key="rt"
-            @click="toggleType(rt)"
-            :class="[
-              'px-2 py-0.5 text-xs font-mono transition-colors',
-              selectedTypes.includes(rt)
-                ? 'text-neutral-100'
-                : 'text-neutral-700 hover:text-neutral-500'
-            ]"
-          >
-            {{ rt }}
-          </button>
-        </div>
-        <button
-          @click="selectAll"
-          class="text-xs font-mono text-neutral-700 hover:text-neutral-400 transition-colors ml-1"
-        >
-          {{ allSelected ? 'none' : 'all' }}
-        </button>
-      </div>
+      <p v-if="error" class="mt-3 text-red-400 text-sm">{{ error }}</p>
     </div>
 
-    <p v-if="error" class="mt-4 text-red-400/80 text-sm font-mono">{{ error }}</p>
-
-    <div v-if="results.length" class="mt-8 space-y-6">
-      <div v-for="(group, idx) in results" :key="idx">
-        <div class="flex items-center gap-3 mb-2">
-          <span class="text-xs font-mono text-neutral-100">{{ group.type }}</span>
-          <span class="text-xs font-mono text-neutral-700">
-            {{ group.records.length }} record{{ group.records.length !== 1 ? 's' : '' }}
-            <span v-if="group.query_time" class="ml-1">{{ group.query_time }}</span>
-          </span>
+    <!-- Results -->
+    <div v-if="results.length" class="space-y-4">
+      <div
+        v-for="(group, idx) in results"
+        :key="idx"
+        class="bg-gray-900 rounded-xl border border-gray-800 p-6"
+      >
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="px-2.5 py-1 bg-gray-700 text-gray-200 text-xs font-bold rounded-md">
+              {{ group.type }}
+            </span>
+            <span class="text-sm text-gray-400">
+              {{ group.records.length }} record{{ group.records.length !== 1 ? 's' : '' }}
+              <span v-if="group.query_time" class="ml-2 text-gray-600">{{ group.query_time }}</span>
+            </span>
+          </div>
         </div>
 
-        <div v-if="group.records.length" class="overflow-auto">
-          <table class="w-full text-sm font-mono">
-            <thead>
-              <tr class="text-left text-neutral-700 text-xs">
-                <th class="pr-4 py-1 font-normal">name</th>
-                <th class="pr-4 py-1 font-normal">ttl</th>
-                <th class="py-1 font-normal">value</th>
+        <div v-if="group.records.length" class="overflow-auto rounded-lg">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-800">
+              <tr class="text-left text-gray-400">
+                <th class="px-4 py-2 font-medium">Name</th>
+                <th class="px-4 py-2 font-medium">TTL</th>
+                <th class="px-4 py-2 font-medium">Value</th>
               </tr>
             </thead>
-            <tbody class="text-neutral-400">
+            <tbody>
               <tr
                 v-for="(rec, i) in group.records"
                 :key="i"
-                class="border-t border-neutral-900"
+                class="border-t border-gray-800 hover:bg-gray-800/50 transition-colors"
               >
-                <td class="pr-4 py-1.5">{{ rec.name }}</td>
-                <td class="pr-4 py-1.5 text-neutral-700">{{ rec.ttl }}</td>
-                <td class="py-1.5 text-neutral-200 break-all">{{ rec.value }}</td>
+                <td class="px-4 py-2 text-gray-300 font-mono">{{ rec.name }}</td>
+                <td class="px-4 py-2 text-gray-500 font-mono">{{ rec.ttl }}</td>
+                <td class="px-4 py-2 text-white font-mono break-all">{{ rec.value }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p v-else class="text-neutral-700 text-xs font-mono">no records</p>
+        <p v-else class="text-gray-500 text-sm">No records found</p>
       </div>
     </div>
   </div>
@@ -156,19 +178,17 @@ function selectAll() {
 
 async function dig() {
   if (!domain.value.trim()) {
-    error.value = 'enter a domain'
+    error.value = 'Please enter a domain'
     return
   }
   if (!selectedTypes.value.length) {
-    error.value = 'select at least one record type'
+    error.value = 'Please select at least one record type'
     return
   }
-
   loading.value = true
   error.value = ''
   results.value = []
   showHistory.value = false
-
   try {
     const res = await fetch('/api/dig.php', {
       method: 'POST',
@@ -180,16 +200,8 @@ async function dig() {
       })
     })
     const data = await res.json()
-    if (data.error) {
-      error.value = data.error
-    } else {
-      results.value = data.results
-      addToHistory(domain.value.trim())
-    }
-  } catch (e) {
-    error.value = 'failed to connect'
-  } finally {
-    loading.value = false
-  }
+    if (data.error) { error.value = data.error } else { results.value = data.results; addToHistory(domain.value.trim()) }
+  } catch (e) { error.value = 'Failed to connect to API' }
+  finally { loading.value = false }
 }
 </script>
