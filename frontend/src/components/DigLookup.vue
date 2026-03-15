@@ -152,7 +152,7 @@ import { ref, computed } from 'vue'
 
 const domain = ref('')
 const server = ref('8.8.8.8')
-const selectedTypes = ref(['A', 'AAAA', 'MX', 'NS'])
+const selectedTypes = ref(['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'PTR', 'SRV', 'CAA'])
 const results = ref([])
 const loading = ref(false)
 const error = ref('')
