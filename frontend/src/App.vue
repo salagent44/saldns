@@ -42,6 +42,7 @@
       <DnsPropagation v-if="activeTab === 'propagation'" />
       <ReverseDns v-if="activeTab === 'reverse'" />
       <HttpHeaders v-if="activeTab === 'headers'" />
+      <SslChecker v-if="activeTab === 'ssl'" />
     </div>
   </div>
 </template>
@@ -54,6 +55,7 @@ import DigLookup from './components/DigLookup.vue'
 import DnsPropagation from './components/DnsPropagation.vue'
 import ReverseDns from './components/ReverseDns.vue'
 import HttpHeaders from './components/HttpHeaders.vue'
+import SslChecker from './components/SslChecker.vue'
 
 const activeTab = ref('subnet')
 const tabs = [
@@ -62,7 +64,8 @@ const tabs = [
   { id: 'dig', label: 'Dig' },
   { id: 'propagation', label: 'Propagation' },
   { id: 'reverse', label: 'Reverse DNS' },
-  { id: 'headers', label: 'HTTP Headers' }
+  { id: 'headers', label: 'HTTP Headers' },
+  { id: 'ssl', label: 'SSL/TLS' }
 ]
 
 const isDark = ref(false)
