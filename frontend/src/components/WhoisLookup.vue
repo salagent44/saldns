@@ -1,68 +1,66 @@
 <template>
-  <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
-      <h2 class="text-lg font-semibold text-white mb-4">WHOIS Lookup</h2>
-      <p class="text-gray-400 text-sm mb-4">
-        Look up registration and ownership information for domains or IP addresses.
-      </p>
-
-      <div class="flex flex-col sm:flex-row gap-4">
-        <div class="flex-1">
-          <label class="block text-sm text-gray-400 mb-1">Domain or IP</label>
-          <input
-            v-model="query"
-            type="text"
-            placeholder="e.g. example.com or 8.8.8.8"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-            @keyup.enter="lookup"
-          />
-        </div>
-        <div class="flex items-end">
+  <div>
+    <div class="flex flex-col sm:flex-row gap-4 items-end">
+      <div class="flex-1 relative">
+        <label class="block text-xs text-neutral-600 mb-1 font-mono">domain or ip</label>
+        <input
+          v-model="query"
+          type="text"
+          placeholder="example.com"
+          class="w-full"
+          @keyup.enter="lookup"
+          @focus="showHistory = true"
+          @blur="hideHistory"
+        />
+        <div v-if="showHistory && history.length" class="absolute z-10 top-full left-0 right-0 mt-1 bg-neutral-900 border border-neutral-800 max-h-40 overflow-auto">
           <button
-            @click="lookup"
-            :disabled="loading"
-            class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-400 text-white font-medium rounded-lg transition-colors"
+            v-for="item in history"
+            :key="item"
+            @mousedown.prevent="query = item; showHistory = false; lookup()"
+            class="block w-full text-left px-3 py-1.5 text-sm font-mono text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
           >
-            {{ loading ? 'Looking up...' : 'Lookup' }}
+            {{ item }}
           </button>
         </div>
       </div>
-
-      <p v-if="error" class="mt-3 text-red-400 text-sm">{{ error }}</p>
+      <button
+        @click="lookup"
+        :disabled="loading"
+        class="text-sm font-mono text-neutral-400 hover:text-neutral-100 disabled:text-neutral-700 transition-colors pb-2"
+      >
+        {{ loading ? '...' : 'go' }}
+      </button>
     </div>
 
-    <!-- Results -->
-    <div v-if="result" class="bg-gray-900 rounded-xl border border-gray-800 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-medium text-gray-400">WHOIS Result</h3>
+    <p v-if="error" class="mt-4 text-red-400/80 text-sm font-mono">{{ error }}</p>
+
+    <div v-if="result" class="mt-8">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-xs text-neutral-600 font-mono">whois</span>
         <button
           @click="copyResult"
-          class="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+          class="text-xs text-neutral-600 hover:text-neutral-300 font-mono transition-colors"
         >
-          {{ copied ? 'Copied!' : 'Copy Raw' }}
+          {{ copied ? 'copied' : 'copy raw' }}
         </button>
       </div>
 
-      <!-- Parsed fields -->
-      <div v-if="result.parsed && Object.keys(result.parsed).length" class="mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div
-            v-for="(value, key) in result.parsed"
-            :key="key"
-            class="bg-gray-800 rounded-lg px-4 py-3"
-          >
-            <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">{{ key }}</div>
-            <div class="text-white text-sm font-mono break-all">{{ value }}</div>
-          </div>
+      <div v-if="result.parsed && Object.keys(result.parsed).length" class="mb-6 space-y-1">
+        <div
+          v-for="(value, key) in result.parsed"
+          :key="key"
+          class="flex gap-4 text-sm font-mono py-1 border-b border-neutral-900"
+        >
+          <span class="text-neutral-600 w-40 shrink-0">{{ key }}</span>
+          <span class="text-neutral-300 break-all">{{ value }}</span>
         </div>
       </div>
 
-      <!-- Raw output -->
       <details class="group">
-        <summary class="text-sm text-gray-400 cursor-pointer hover:text-gray-300 transition-colors">
-          Raw WHOIS output
+        <summary class="text-xs text-neutral-600 cursor-pointer hover:text-neutral-400 font-mono transition-colors">
+          raw output
         </summary>
-        <pre class="mt-3 bg-gray-800 rounded-lg p-4 text-sm text-gray-300 font-mono overflow-auto max-h-[50vh] whitespace-pre-wrap">{{ result.raw }}</pre>
+        <pre class="mt-3 text-xs text-neutral-500 font-mono overflow-auto max-h-[50vh] whitespace-pre-wrap leading-relaxed">{{ result.raw }}</pre>
       </details>
     </div>
   </div>
@@ -76,16 +74,33 @@ const result = ref(null)
 const loading = ref(false)
 const error = ref('')
 const copied = ref(false)
+const showHistory = ref(false)
+
+const HISTORY_KEY = 'dns-tools-whois-history'
+const history = ref(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
+
+function addToHistory(q) {
+  const list = history.value.filter(h => h !== q)
+  list.unshift(q)
+  if (list.length > 20) list.pop()
+  history.value = list
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list))
+}
+
+function hideHistory() {
+  setTimeout(() => showHistory.value = false, 150)
+}
 
 async function lookup() {
   if (!query.value.trim()) {
-    error.value = 'Please enter a domain or IP address'
+    error.value = 'enter a domain or ip'
     return
   }
 
   loading.value = true
   error.value = ''
   result.value = null
+  showHistory.value = false
 
   try {
     const res = await fetch('/api/whois.php', {
@@ -98,9 +113,10 @@ async function lookup() {
       error.value = data.error
     } else {
       result.value = data
+      addToHistory(query.value.trim())
     }
   } catch (e) {
-    error.value = 'Failed to connect to API'
+    error.value = 'failed to connect'
   } finally {
     loading.value = false
   }

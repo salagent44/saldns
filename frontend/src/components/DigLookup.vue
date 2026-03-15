@@ -1,116 +1,114 @@
 <template>
-  <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
-      <h2 class="text-lg font-semibold text-white mb-4">Dig Lookup</h2>
-      <p class="text-gray-400 text-sm mb-4">
-        Query DNS records for any domain. Select one or more record types.
-      </p>
-
-      <div class="flex flex-col gap-4">
-        <div class="flex flex-col sm:flex-row gap-4">
-          <div class="flex-1">
-            <label class="block text-sm text-gray-400 mb-1">Domain</label>
-            <input
-              v-model="domain"
-              type="text"
-              placeholder="e.g. example.com"
-              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-              @keyup.enter="dig"
-            />
-          </div>
-          <div class="w-full sm:w-48">
-            <label class="block text-sm text-gray-400 mb-1">DNS Server (optional)</label>
-            <input
-              v-model="server"
-              type="text"
-              placeholder="e.g. 8.8.8.8"
-              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-            />
-          </div>
-          <div class="flex items-end">
+  <div>
+    <div class="flex flex-col gap-4">
+      <div class="flex flex-col sm:flex-row gap-4 items-end">
+        <div class="flex-1 relative">
+          <label class="block text-xs text-neutral-600 mb-1 font-mono">domain</label>
+          <input
+            v-model="domain"
+            type="text"
+            placeholder="example.com"
+            class="w-full"
+            @keyup.enter="dig"
+            @focus="showHistory = true"
+            @blur="hideHistory"
+          />
+          <div v-if="showHistory && history.length" class="absolute z-10 top-full left-0 right-0 mt-1 bg-neutral-900 border border-neutral-800 max-h-40 overflow-auto">
             <button
-              @click="dig"
-              :disabled="loading"
-              class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 disabled:text-blue-400 text-white font-medium rounded-lg transition-colors"
+              v-for="item in history"
+              :key="item"
+              @mousedown.prevent="domain = item; showHistory = false; dig()"
+              class="block w-full text-left px-3 py-1.5 text-sm font-mono text-neutral-400 hover:text-neutral-100 hover:bg-neutral-800 transition-colors"
             >
-              {{ loading ? 'Querying...' : 'Dig' }}
+              {{ item }}
             </button>
           </div>
         </div>
-
-        <!-- Record Type Selector -->
-        <div>
-          <label class="block text-sm text-gray-400 mb-2">Record Types</label>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="rt in recordTypes"
-              :key="rt"
-              @click="toggleType(rt)"
-              :class="[
-                'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
-                selectedTypes.includes(rt)
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-gray-200 hover:bg-gray-700'
-              ]"
-            >
-              {{ rt }}
-            </button>
-          </div>
+        <div class="w-full sm:w-40">
+          <label class="block text-xs text-neutral-600 mb-1 font-mono">server</label>
+          <input
+            v-model="server"
+            type="text"
+            placeholder="8.8.8.8"
+            class="w-full"
+          />
         </div>
+        <button
+          @click="dig"
+          :disabled="loading"
+          class="text-sm font-mono text-neutral-400 hover:text-neutral-100 disabled:text-neutral-700 transition-colors pb-2"
+        >
+          {{ loading ? '...' : 'go' }}
+        </button>
       </div>
 
-      <p v-if="error" class="mt-3 text-red-400 text-sm">{{ error }}</p>
+      <div class="flex items-center gap-3">
+        <div class="flex flex-wrap gap-1.5">
+          <button
+            v-for="rt in recordTypes"
+            :key="rt"
+            @click="toggleType(rt)"
+            :class="[
+              'px-2 py-0.5 text-xs font-mono transition-colors',
+              selectedTypes.includes(rt)
+                ? 'text-neutral-100'
+                : 'text-neutral-700 hover:text-neutral-500'
+            ]"
+          >
+            {{ rt }}
+          </button>
+        </div>
+        <button
+          @click="selectAll"
+          class="text-xs font-mono text-neutral-700 hover:text-neutral-400 transition-colors ml-1"
+        >
+          {{ allSelected ? 'none' : 'all' }}
+        </button>
+      </div>
     </div>
 
-    <!-- Results -->
-    <div v-if="results.length" class="space-y-4">
-      <div
-        v-for="(group, idx) in results"
-        :key="idx"
-        class="bg-gray-900 rounded-xl border border-gray-800 p-6"
-      >
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <span class="px-2.5 py-1 bg-blue-600/20 text-blue-400 text-xs font-bold rounded-md">
-              {{ group.type }}
-            </span>
-            <span class="text-sm text-gray-400">
-              {{ group.records.length }} record{{ group.records.length !== 1 ? 's' : '' }}
-              <span v-if="group.query_time" class="ml-2 text-gray-600">{{ group.query_time }}</span>
-            </span>
-          </div>
+    <p v-if="error" class="mt-4 text-red-400/80 text-sm font-mono">{{ error }}</p>
+
+    <div v-if="results.length" class="mt-8 space-y-6">
+      <div v-for="(group, idx) in results" :key="idx">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-xs font-mono text-neutral-100">{{ group.type }}</span>
+          <span class="text-xs font-mono text-neutral-700">
+            {{ group.records.length }} record{{ group.records.length !== 1 ? 's' : '' }}
+            <span v-if="group.query_time" class="ml-1">{{ group.query_time }}</span>
+          </span>
         </div>
 
-        <div v-if="group.records.length" class="overflow-auto rounded-lg">
-          <table class="w-full text-sm">
-            <thead class="bg-gray-800">
-              <tr class="text-left text-gray-400">
-                <th class="px-4 py-2 font-medium">Name</th>
-                <th class="px-4 py-2 font-medium">TTL</th>
-                <th class="px-4 py-2 font-medium">Value</th>
+        <div v-if="group.records.length" class="overflow-auto">
+          <table class="w-full text-sm font-mono">
+            <thead>
+              <tr class="text-left text-neutral-700 text-xs">
+                <th class="pr-4 py-1 font-normal">name</th>
+                <th class="pr-4 py-1 font-normal">ttl</th>
+                <th class="py-1 font-normal">value</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody class="text-neutral-400">
               <tr
                 v-for="(rec, i) in group.records"
                 :key="i"
-                class="border-t border-gray-800 hover:bg-gray-800/50 transition-colors"
+                class="border-t border-neutral-900"
               >
-                <td class="px-4 py-2 text-gray-300 font-mono">{{ rec.name }}</td>
-                <td class="px-4 py-2 text-gray-500 font-mono">{{ rec.ttl }}</td>
-                <td class="px-4 py-2 text-white font-mono break-all">{{ rec.value }}</td>
+                <td class="pr-4 py-1.5">{{ rec.name }}</td>
+                <td class="pr-4 py-1.5 text-neutral-700">{{ rec.ttl }}</td>
+                <td class="py-1.5 text-neutral-200 break-all">{{ rec.value }}</td>
               </tr>
             </tbody>
           </table>
         </div>
-        <p v-else class="text-gray-500 text-sm">No records found</p>
+        <p v-else class="text-neutral-700 text-xs font-mono">no records</p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const domain = ref('')
 const server = ref('')
@@ -118,8 +116,26 @@ const selectedTypes = ref(['A', 'AAAA', 'MX', 'NS'])
 const results = ref([])
 const loading = ref(false)
 const error = ref('')
+const showHistory = ref(false)
 
 const recordTypes = ['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'PTR', 'SRV', 'CAA']
+
+const HISTORY_KEY = 'dns-tools-dig-history'
+const history = ref(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
+
+const allSelected = computed(() => selectedTypes.value.length === recordTypes.length)
+
+function addToHistory(q) {
+  const list = history.value.filter(h => h !== q)
+  list.unshift(q)
+  if (list.length > 20) list.pop()
+  history.value = list
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(list))
+}
+
+function hideHistory() {
+  setTimeout(() => showHistory.value = false, 150)
+}
 
 function toggleType(rt) {
   const idx = selectedTypes.value.indexOf(rt)
@@ -130,19 +146,28 @@ function toggleType(rt) {
   }
 }
 
+function selectAll() {
+  if (allSelected.value) {
+    selectedTypes.value = []
+  } else {
+    selectedTypes.value = [...recordTypes]
+  }
+}
+
 async function dig() {
   if (!domain.value.trim()) {
-    error.value = 'Please enter a domain'
+    error.value = 'enter a domain'
     return
   }
   if (!selectedTypes.value.length) {
-    error.value = 'Please select at least one record type'
+    error.value = 'select at least one record type'
     return
   }
 
   loading.value = true
   error.value = ''
   results.value = []
+  showHistory.value = false
 
   try {
     const res = await fetch('/api/dig.php', {
@@ -159,9 +184,10 @@ async function dig() {
       error.value = data.error
     } else {
       results.value = data.results
+      addToHistory(domain.value.trim())
     }
   } catch (e) {
-    error.value = 'Failed to connect to API'
+    error.value = 'failed to connect'
   } finally {
     loading.value = false
   }
