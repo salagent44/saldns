@@ -6,10 +6,11 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
 
+require_once __DIR__ . '/_security.php';
+
 $input = json_decode(file_get_contents('php://input'), true);
 $ip = $input['ip'] ?? '';
 
-// Sanitize IP (IPv4 or IPv6)
 if (!preg_match('/^[a-fA-F0-9.:]+$/', $ip)) {
     echo json_encode(['error' => 'Invalid IP address']);
     exit;
@@ -18,6 +19,11 @@ if (!preg_match('/^[a-fA-F0-9.:]+$/', $ip)) {
 if (strlen($ip) > 45) {
     echo json_encode(['error' => 'IP address too long']);
     exit;
+}
+
+// Block private/internal IPs
+if (is_private_ip($ip)) {
+    block_private();
 }
 
 $safeIp = escapeshellarg($ip);

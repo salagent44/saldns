@@ -6,11 +6,12 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit(0); }
 
+require_once __DIR__ . '/_security.php';
+
 $input = json_decode(file_get_contents('php://input'), true);
 $host = $input['host'] ?? '';
 $port = intval($input['port'] ?? 443);
 
-// Sanitize host
 if (!preg_match('/^[a-zA-Z0-9.\-]+$/', $host)) {
     echo json_encode(['error' => 'Invalid hostname']);
     exit;
@@ -24,6 +25,12 @@ if (strlen($host) > 253) {
 if ($port < 1 || $port > 65535) {
     echo json_encode(['error' => 'Invalid port']);
     exit;
+}
+
+// SSRF protection: block private/internal IPs
+$resolvedIp = validate_host_public($host);
+if ($resolvedIp === false) {
+    block_private();
 }
 
 $safeHost = escapeshellarg($host);
@@ -43,7 +50,6 @@ $cert = [];
 // Subject
 if (preg_match('/Subject:\s*(.+)/i', $output, $m)) {
     $cert['subject'] = trim($m[1]);
-    // Extract CN
     if (preg_match('/CN\s*=\s*([^,\/]+)/', $m[1], $cn)) {
         $cert['common_name'] = trim($cn[1]);
     }
@@ -66,7 +72,6 @@ if (preg_match('/notBefore=(.+)/i', $output, $m)) {
 }
 if (preg_match('/notAfter=(.+)/i', $output, $m)) {
     $cert['not_after'] = trim($m[1]);
-    // Calculate days remaining
     $expiry = strtotime(trim($m[1]));
     if ($expiry) {
         $cert['days_remaining'] = (int)round(($expiry - time()) / 86400);
@@ -116,7 +121,6 @@ $chainOutput = shell_exec($chainCmd);
 $chain = [];
 if (preg_match_all('/-----BEGIN CERTIFICATE-----/', $chainOutput, $chainMatches)) {
     $chainCount = count($chainMatches[0]);
-    // Extract each cert's subject
     preg_match_all('/s:(.+?)$/m', $chainOutput, $subjects);
     preg_match_all('/i:(.+?)$/m', $chainOutput, $issuers);
     for ($i = 0; $i < $chainCount; $i++) {
