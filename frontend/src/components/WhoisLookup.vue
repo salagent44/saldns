@@ -44,38 +44,57 @@
     </div>
 
     <!-- Results -->
-    <div v-if="result" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">WHOIS Result</h3>
-        <button
-          @click="copyResult"
-          class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-        >
-          {{ copied ? 'Copied!' : 'Copy Raw' }}
-        </button>
-      </div>
+    <div v-if="result" class="space-y-4">
+      <!-- Sections -->
+      <div
+        v-for="(section, idx) in result.sections"
+        :key="idx"
+        class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
+      >
+        <h3 class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-4">{{ section.title }}</h3>
 
-      <!-- Parsed fields -->
-      <div v-if="result.parsed && Object.keys(result.parsed).length" class="mb-6">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <!-- Key-value fields -->
+        <div v-if="section.fields" class="space-y-2">
           <div
-            v-for="(value, key) in result.parsed"
+            v-for="(value, key) in section.fields"
             :key="key"
-            class="bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-3"
+            class="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4"
           >
-            <div class="text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">{{ key }}</div>
-            <div class="text-gray-900 dark:text-white text-sm font-mono break-all">{{ value }}</div>
+            <span class="text-sm text-gray-400 dark:text-gray-500 sm:w-44 shrink-0">{{ key }}</span>
+            <span class="text-sm text-gray-900 dark:text-white font-mono break-all">{{ value }}</span>
+          </div>
+        </div>
+
+        <!-- List items (name servers, statuses) -->
+        <div v-if="section.list" class="space-y-1.5">
+          <div
+            v-for="(item, i) in section.list"
+            :key="i"
+            class="text-sm text-gray-900 dark:text-white font-mono pl-0 sm:pl-4"
+          >
+            {{ item }}
           </div>
         </div>
       </div>
 
       <!-- Raw output -->
-      <details class="group">
-        <summary class="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300 transition-colors">
-          Raw WHOIS output
-        </summary>
-        <pre class="mt-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm text-gray-600 dark:text-gray-300 font-mono overflow-auto max-h-[50vh] whitespace-pre-wrap">{{ result.raw }}</pre>
-      </details>
+      <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+        <div class="flex items-center justify-between mb-3">
+          <button
+            @click="showRaw = !showRaw"
+            class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+          >
+            {{ showRaw ? 'Hide' : 'Show' }} raw WHOIS output
+          </button>
+          <button
+            @click="copyResult"
+            class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+          >
+            {{ copied ? 'Copied!' : 'Copy Raw' }}
+          </button>
+        </div>
+        <pre v-if="showRaw" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 text-sm text-gray-600 dark:text-gray-300 font-mono overflow-auto max-h-[50vh] whitespace-pre-wrap">{{ result.raw }}</pre>
+      </div>
     </div>
   </div>
 </template>
@@ -89,6 +108,7 @@ const loading = ref(false)
 const error = ref('')
 const copied = ref(false)
 const showHistory = ref(false)
+const showRaw = ref(false)
 
 const HISTORY_KEY = 'dns-tools-whois-history'
 const history = ref(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
@@ -114,6 +134,7 @@ async function lookup() {
   error.value = ''
   result.value = null
   showHistory.value = false
+  showRaw.value = false
   try {
     const res = await fetch('/api/whois.php', {
       method: 'POST',
