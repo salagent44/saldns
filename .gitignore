@@ -1,0 +1,10 @@
+# Only include project files - ignore everything else in $HOME
+/*
+!/.gitignore
+!/CLAUDE.md
+!/docker-compose.yml
+!/Dockerfile.api
+!/api/
+!/frontend/
+frontend/node_modules/
+frontend/dist/

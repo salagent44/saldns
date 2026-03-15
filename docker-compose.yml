@@ -1,0 +1,27 @@
+services:
+  dns-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dns-frontend
+    expose:
+      - "80"
+    depends_on:
+      - dns-api
+    networks:
+      - default
+      - salgtd_default
+
+  dns-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: dns-api
+    expose:
+      - "80"
+    networks:
+      - default
+
+networks:
+  salgtd_default:
+    external: true
