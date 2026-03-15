@@ -31,6 +31,11 @@ function is_private_ip($ip) {
         '255.255.255.255/32' // Broadcast
     ];
 
+    // IPv6 public addresses: if it passed the checks above, it's not private
+    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
+        return false;
+    }
+
     $ipLong = ip2long($ip);
     if ($ipLong === false) return true; // Can't parse = block it
 
