@@ -37,11 +37,11 @@ foreach ($types as $type) {
 
     $safeDomain = escapeshellarg($domain);
     $safeType = escapeshellarg($type);
-    $cmd = "dig +noall +answer +authority +stats $safeDomain $safeType";
+    $cmd = "dig +noall +answer +stats $safeDomain $safeType";
 
     if ($server) {
         $safeServer = escapeshellarg('@' . $server);
-        $cmd = "dig +noall +answer +authority +stats $safeServer $safeDomain $safeType";
+        $cmd = "dig +noall +answer +stats $safeServer $safeDomain $safeType";
     }
 
     $output = shell_exec("$cmd 2>&1");
@@ -63,11 +63,12 @@ foreach ($types as $type) {
             if (empty($line) || $line[0] === ';') continue;
 
             // Parse answer lines: name ttl class type value
-            if (preg_match('/^(\S+)\s+(\d+)\s+IN\s+\S+\s+(.+)$/', $line, $m)) {
+            if (preg_match('/^(\S+)\s+(\d+)\s+IN\s+(\S+)\s+(.+)$/', $line, $m)) {
                 $records[] = [
                     'name' => rtrim($m[1], '.'),
                     'ttl' => intval($m[2]),
-                    'value' => trim($m[3])
+                    'type' => $m[3],
+                    'value' => trim($m[4])
                 ];
             }
         }

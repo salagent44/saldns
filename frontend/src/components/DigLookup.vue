@@ -106,6 +106,7 @@
             <thead class="bg-gray-50 dark:bg-gray-800">
               <tr class="text-left text-gray-500 dark:text-gray-400">
                 <th class="px-4 py-2 font-medium">Name</th>
+                <th class="px-4 py-2 font-medium">Type</th>
                 <th class="px-4 py-2 font-medium">TTL</th>
                 <th class="px-4 py-2 font-medium">Value</th>
               </tr>
@@ -117,6 +118,7 @@
                 class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
               >
                 <td class="px-4 py-2 text-gray-600 dark:text-gray-300 font-mono">{{ rec.name }}</td>
+                <td class="px-4 py-2 text-gray-400 dark:text-gray-500 font-mono">{{ rec.type }}</td>
                 <td class="px-4 py-2 text-gray-400 dark:text-gray-500 font-mono">{{ rec.ttl }}</td>
                 <td class="px-4 py-2 text-gray-900 dark:text-white font-mono break-all">{{ rec.value }}</td>
               </tr>
