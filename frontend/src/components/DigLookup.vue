@@ -82,6 +82,22 @@
       <p v-if="error" class="mt-3 text-red-500 dark:text-red-400 text-sm">{{ error }}</p>
     </div>
 
+    <!-- Export buttons -->
+    <div v-if="allRecords.length" class="flex gap-2">
+      <button
+        @click="exportZone"
+        class="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        Export Zone File
+      </button>
+      <button
+        @click="exportCSV"
+        class="px-4 py-2 text-sm font-medium bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+      >
+        Export CSV
+      </button>
+    </div>
+
     <!-- Results -->
     <div v-if="results.length" class="space-y-4">
       <div
@@ -149,6 +165,10 @@ const history = ref(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
 
 const allSelected = computed(() => selectedTypes.value.length === recordTypes.length)
 
+const allRecords = computed(() =>
+  results.value.flatMap(g => g.records)
+)
+
 function addToHistory(q) {
   const list = history.value.filter(h => h !== q)
   list.unshift(q)
@@ -176,6 +196,32 @@ function selectAll() {
   } else {
     selectedTypes.value = [...recordTypes]
   }
+}
+
+function download(filename, content, mime = 'text/plain') {
+  const blob = new Blob([content], { type: mime })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportZone() {
+  const lines = allRecords.value.map(r =>
+    `${r.name}.\t${r.ttl}\tIN\t${r.type}\t${r.value}`
+  )
+  const header = `; Zone file exported from DNS Tools\n; Domain: ${domain.value}\n; Date: ${new Date().toISOString()}\n;\n`
+  download(`${domain.value.trim()}.zone.txt`, header + lines.join('\n') + '\n')
+}
+
+function exportCSV() {
+  const header = 'Name,Type,TTL,Value'
+  const rows = allRecords.value.map(r =>
+    `${r.name},${r.type},${r.ttl},"${r.value.replace(/"/g, '""')}"`
+  )
+  download(`${domain.value.trim()}.csv`, header + '\n' + rows.join('\n') + '\n', 'text/csv')
 }
 
 async function dig() {
