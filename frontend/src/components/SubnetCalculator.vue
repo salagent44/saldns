@@ -1,7 +1,7 @@
 <template>
   <div class="space-y-6">
-    <div class="bg-gray-900 rounded-xl border border-gray-800 p-6">
-      <h2 class="text-lg font-semibold text-white mb-4">Subnet Calculator</h2>
+    <div class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Subnet Calculator</h2>
 
       <!-- Mode toggle -->
       <div class="flex gap-2 mb-4">
@@ -9,14 +9,14 @@
           @click="mode = 'split'"
           :class="[
             'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-            mode === 'split' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+            mode === 'split' ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
           ]"
         >Split CIDR</button>
         <button
           @click="mode = 'range'"
           :class="[
             'px-3 py-1.5 rounded-md text-xs font-medium transition-colors',
-            mode === 'range' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800'
+            mode === 'range' ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
           ]"
         >Range to CIDR</button>
       </div>
@@ -24,20 +24,20 @@
       <!-- Split CIDR -->
       <div v-if="mode === 'split'" class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-          <label class="block text-sm text-gray-400 mb-1">CIDR Block</label>
+          <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">CIDR Block</label>
           <input
             v-model="cidr"
             type="text"
             placeholder="e.g. 10.0.0.0/16"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="calculate"
           />
         </div>
         <div class="w-full sm:w-40">
-          <label class="block text-sm text-gray-400 mb-1">Target Prefix</label>
+          <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">Target Prefix</label>
           <select
             v-model="targetPrefix"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent"
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:border-transparent"
           >
             <option v-for="n in prefixOptions" :key="n" :value="n">/{{ n }}</option>
           </select>
@@ -46,7 +46,7 @@
           <button
             @click="calculate"
             :disabled="loading"
-            class="w-full sm:w-auto px-6 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium rounded-lg transition-colors"
+            class="w-full sm:w-auto px-6 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
           >
             {{ loading ? 'Working...' : 'Calculate' }}
           </button>
@@ -56,22 +56,22 @@
       <!-- Range to CIDR -->
       <div v-if="mode === 'range'" class="flex flex-col sm:flex-row gap-4">
         <div class="flex-1">
-          <label class="block text-sm text-gray-400 mb-1">Start IP</label>
+          <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">Start IP</label>
           <input
             v-model="rangeStart"
             type="text"
             placeholder="e.g. 192.168.0.0"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="convertRange"
           />
         </div>
         <div class="flex-1">
-          <label class="block text-sm text-gray-400 mb-1">End IP</label>
+          <label class="block text-sm text-gray-500 dark:text-gray-400 mb-1">End IP</label>
           <input
             v-model="rangeEnd"
             type="text"
             placeholder="e.g. 192.168.3.255"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-600 focus:border-transparent font-mono"
+            class="w-full bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg px-4 py-2.5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-400 dark:focus:ring-gray-600 focus:border-transparent font-mono"
             @keyup.enter="convertRange"
           />
         </div>
@@ -79,25 +79,25 @@
           <button
             @click="convertRange"
             :disabled="loading"
-            class="w-full sm:w-auto px-6 py-2.5 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-medium rounded-lg transition-colors"
+            class="w-full sm:w-auto px-6 py-2.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:text-gray-400 dark:disabled:text-gray-600 text-gray-900 dark:text-white font-medium rounded-lg transition-colors"
           >
             {{ loading ? 'Working...' : 'Convert' }}
           </button>
         </div>
       </div>
 
-      <p v-if="error" class="mt-3 text-red-400 text-sm">{{ error }}</p>
+      <p v-if="error" class="mt-3 text-red-500 dark:text-red-400 text-sm">{{ error }}</p>
     </div>
 
     <!-- Results -->
-    <div v-if="results.length" class="bg-gray-900 rounded-xl border border-gray-800 p-6">
+    <div v-if="results.length" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-sm font-medium text-gray-400">
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400">
           {{ results.length }} {{ results.length === 1 ? 'block' : 'subnets' }} found
         </h3>
         <button
           @click="copyAll"
-          class="text-sm text-gray-400 hover:text-gray-200 transition-colors"
+          class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
         >
           {{ copied ? 'Copied!' : 'Copy All' }}
         </button>
@@ -105,8 +105,8 @@
 
       <div class="overflow-auto max-h-[60vh] rounded-lg">
         <table class="w-full text-sm">
-          <thead class="sticky top-0 bg-gray-800">
-            <tr class="text-left text-gray-400">
+          <thead class="sticky top-0 bg-gray-50 dark:bg-gray-800">
+            <tr class="text-left text-gray-500 dark:text-gray-400">
               <th class="px-4 py-2 font-medium">#</th>
               <th class="px-4 py-2 font-medium">CIDR</th>
               <th class="px-4 py-2 font-medium">First IP</th>
@@ -118,13 +118,13 @@
             <tr
               v-for="(subnet, i) in results"
               :key="i"
-              class="border-t border-gray-800 hover:bg-gray-800/50 transition-colors"
+              class="border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
             >
-              <td class="px-4 py-2 text-gray-500 font-mono">{{ i + 1 }}</td>
-              <td class="px-4 py-2 text-white font-mono">{{ subnet.cidr }}</td>
-              <td class="px-4 py-2 text-gray-300 font-mono">{{ subnet.first_ip }}</td>
-              <td class="px-4 py-2 text-gray-300 font-mono">{{ subnet.last_ip }}</td>
-              <td class="px-4 py-2 text-gray-300 font-mono text-right">{{ subnet.hosts.toLocaleString() }}</td>
+              <td class="px-4 py-2 text-gray-400 dark:text-gray-500 font-mono">{{ i + 1 }}</td>
+              <td class="px-4 py-2 text-gray-900 dark:text-white font-mono">{{ subnet.cidr }}</td>
+              <td class="px-4 py-2 text-gray-600 dark:text-gray-300 font-mono">{{ subnet.first_ip }}</td>
+              <td class="px-4 py-2 text-gray-600 dark:text-gray-300 font-mono">{{ subnet.last_ip }}</td>
+              <td class="px-4 py-2 text-gray-600 dark:text-gray-300 font-mono text-right">{{ subnet.hosts.toLocaleString() }}</td>
             </tr>
           </tbody>
         </table>
