@@ -10,7 +10,7 @@ services:
       - dns-api
     networks:
       - default
-      - salgtd_default
+      - proxy
 
   dns-api:
     build:
@@ -23,5 +23,5 @@ services:
       - default
 
 networks:
-  salgtd_default:
+  proxy:
     external: true
