@@ -80,6 +80,14 @@
       </div>
 
       <p v-if="error" class="mt-3 text-red-500 dark:text-red-400 text-sm">{{ error }}</p>
+
+      <!-- Command preview -->
+      <div v-if="commandPreview.length" class="mt-4">
+        <label class="text-xs text-gray-400 dark:text-gray-500 mb-1 block">Commands</label>
+        <div class="bg-gray-50 dark:bg-gray-800 rounded-lg px-4 py-2.5 font-mono text-xs text-gray-500 dark:text-gray-400 space-y-0.5 overflow-x-auto">
+          <div v-for="(cmd, i) in commandPreview" :key="i">$ {{ cmd }}</div>
+        </div>
+      </div>
     </div>
 
     <!-- Export buttons -->
@@ -105,8 +113,8 @@
         :key="idx"
         class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6"
       >
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-3">
+        <div class="mb-4">
+          <div class="flex items-center gap-3 mb-1">
             <span class="px-2.5 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-xs font-bold rounded-md">
               {{ group.type }}
             </span>
@@ -114,6 +122,9 @@
               {{ group.records.length }} record{{ group.records.length !== 1 ? 's' : '' }}
               <span v-if="group.query_time" class="ml-2 text-gray-400 dark:text-gray-600">{{ group.query_time }}</span>
             </span>
+          </div>
+          <div v-if="executedCommands[idx]" class="font-mono text-xs text-gray-400 dark:text-gray-500">
+            $ {{ executedCommands[idx] }}
           </div>
         </div>
 
@@ -152,7 +163,7 @@ import { ref, computed } from 'vue'
 
 const domain = ref('')
 const server = ref('8.8.8.8')
-const selectedTypes = ref(['A', 'AAAA', 'CNAME', 'MX', 'NS', 'TXT', 'SOA', 'PTR', 'SRV', 'CAA'])
+const selectedTypes = ref([])
 const results = ref([])
 const loading = ref(false)
 const error = ref('')
@@ -168,6 +179,17 @@ const allSelected = computed(() => selectedTypes.value.length === recordTypes.le
 const allRecords = computed(() =>
   results.value.flatMap(g => g.records)
 )
+
+const commandPreview = computed(() => {
+  const d = domain.value.trim() || 'example.com'
+  const srv = server.value.trim()
+  const srvPart = srv ? ` @${srv}` : ''
+  return selectedTypes.value.map(t =>
+    `dig +noall +answer +stats${srvPart} ${d} ${t}`
+  )
+})
+
+const executedCommands = ref([])
 
 function addToHistory(q) {
   const list = history.value.filter(h => h !== q)
@@ -236,6 +258,7 @@ async function dig() {
   loading.value = true
   error.value = ''
   results.value = []
+  executedCommands.value = [...commandPreview.value]
   showHistory.value = false
   try {
     const res = await fetch('/api/dig.php', {

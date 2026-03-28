@@ -43,6 +43,11 @@
       <p v-if="error" class="mt-3 text-red-500 dark:text-red-400 text-sm">{{ error }}</p>
     </div>
 
+    <!-- Executed command -->
+    <div v-if="executedCommand && result" class="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 px-6 py-3">
+      <div class="font-mono text-xs text-gray-400 dark:text-gray-500">$ {{ executedCommand }}</div>
+    </div>
+
     <!-- Results -->
     <div v-if="result" class="space-y-4">
       <!-- Sections -->
@@ -109,6 +114,7 @@ const error = ref('')
 const copied = ref(false)
 const showHistory = ref(false)
 const showRaw = ref(false)
+const executedCommand = ref('')
 
 const HISTORY_KEY = 'dns-tools-whois-history'
 const history = ref(JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'))
@@ -133,6 +139,7 @@ async function lookup() {
   loading.value = true
   error.value = ''
   result.value = null
+  executedCommand.value = `whois ${query.value.trim()}`
   showHistory.value = false
   showRaw.value = false
   try {
