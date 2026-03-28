@@ -39,10 +39,6 @@
       <SubnetCalculator v-if="activeTab === 'subnet'" />
       <WhoisLookup v-if="activeTab === 'whois'" />
       <DigLookup v-if="activeTab === 'dig'" />
-      <DnsPropagation v-if="activeTab === 'propagation'" />
-      <ReverseDns v-if="activeTab === 'reverse'" />
-      <HttpHeaders v-if="activeTab === 'headers'" />
-      <SslChecker v-if="activeTab === 'ssl'" />
     </div>
   </div>
 </template>
@@ -52,20 +48,12 @@ import { ref, onMounted } from 'vue'
 import SubnetCalculator from './components/SubnetCalculator.vue'
 import WhoisLookup from './components/WhoisLookup.vue'
 import DigLookup from './components/DigLookup.vue'
-import DnsPropagation from './components/DnsPropagation.vue'
-import ReverseDns from './components/ReverseDns.vue'
-import HttpHeaders from './components/HttpHeaders.vue'
-import SslChecker from './components/SslChecker.vue'
 
 const activeTab = ref('subnet')
 const tabs = [
   { id: 'subnet', label: 'Subnet Calculator' },
   { id: 'whois', label: 'WHOIS' },
-  { id: 'dig', label: 'Dig' },
-  { id: 'propagation', label: 'Propagation' },
-  { id: 'reverse', label: 'Reverse DNS' },
-  { id: 'headers', label: 'HTTP Headers' },
-  { id: 'ssl', label: 'SSL/TLS' }
+  { id: 'dig', label: 'Dig' }
 ]
 
 const isDark = ref(false)

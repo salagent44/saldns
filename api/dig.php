@@ -12,7 +12,7 @@ $types = $input['types'] ?? ['A'];
 $server = $input['server'] ?? null;
 
 // Sanitize domain
-if (!preg_match('/^[a-zA-Z0-9.\-]+$/', $domain)) {
+if (!preg_match('/^[a-zA-Z0-9.\-_]+$/', $domain)) {
     echo json_encode(['error' => 'Invalid domain name']);
     exit;
 }
